@@ -1,4 +1,5 @@
 import aiohttp
+import logging
 from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity
@@ -9,6 +10,8 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DOMAIN, URL, SCAN_INTERVAL
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -24,32 +27,41 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class BrugCoordinator(DataUpdateCoordinator):
-    """Coordinator die elke 30 sec de JSON ophaalt."""
+    """Coordinator die elke SCAN_INTERVAL sec de brugstatus verwerkt."""
 
     def __init__(self, hass, brug_id):
         super().__init__(
-            hass,
+            hass=hass,
+            logger=_LOGGER,
             name=f"brugmelding_{brug_id}",
-            update_interval=SCAN_INTERVAL,
+            update_interval=SCAN_INTERVAL,  # LET OP: SCAN_INTERVAL is nu timedelta
         )
         self.brug_id = brug_id
 
     async def _async_update_data(self):
-        """Verkrijg brug-informatie."""
+        """Haalt de meest recente brugstatus op."""
+        _LOGGER.debug("Brugmelding: ophalen JSON van %s", URL)
+
         async with aiohttp.ClientSession() as session:
             async with session.get(URL) as resp:
-                data = await resp.json()
+                try:
+                    data = await resp.json()
+                except Exception as e:
+                    _LOGGER.error("JSON decode fout: %s", e)
+                    return None
 
-        # Zoek juiste brug op basis van Id
+        # Zoek juiste brug-ID in de lijst
         for b in data:
             if isinstance(b, dict) and b.get("Id") == self.brug_id:
+                _LOGGER.debug("Gevonden brug %s: %s", self.brug_id, b)
                 return b
 
+        _LOGGER.warning("Brug ID %s niet gevonden in JSON", self.brug_id)
         return None
 
 
 class BrugSensor(CoordinatorEntity, SensorEntity):
-    """Sensor voor open/dicht status."""
+    """Sensor die open/dicht status van één brug weergeeft."""
 
     def __init__(self, coordinator, naam, brug_id):
         super().__init__(coordinator)
@@ -59,12 +71,13 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = f"Brugmelding {naam}"
         self._attr_unique_id = f"brugmelding_sensor_{brug_id}"
 
-        # Device info zodat sensor onder apparaat valt
+        # Device info → zodat dit een apparat wordt in HA
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, brug_id)},
             name=f"Brugmelding {naam}",
             manufacturer="SvenKopp.nl",
             model="Brug Status Sensor",
+            configuration_url="https://brugmelding.svenkopp.com",
         )
 
     @property
@@ -79,12 +92,12 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def entity_picture(self):
-        """Icoon voor de entiteit."""
+        """Gebruik het icoon vanuit /local/brugmelding/icon.png."""
         return "/local/brugmelding/icon.png"
 
     @property
     def extra_state_attributes(self):
-        """Extra attributen uit de JSON."""
+        """Extra informatie uit het JSON Data-blok."""
         data = self.coordinator.data
         if not data:
             return {}
@@ -93,8 +106,8 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
 
         return {
             "naam": d.get("Naam"),
-            "situatie": d.get("SituationCurrent"),
-            "voorspeld": d.get("SituationVoorspeld"),
+            "situatie_huidig": d.get("SituationCurrent"),
+            "situatie_voorspeld": d.get("SituationVoorspeld"),
             "ndw_version": d.get("ndwVersion"),
             "datum_start": d.get("GetDatumStart"),
             "image": d.get("image"),
