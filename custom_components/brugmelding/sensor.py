@@ -96,6 +96,21 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
         return "/local/brugmelding/icon.png"
 
     @property
+    def icon(self):
+        """Toon verschillend icoon voor open/dicht."""
+        data = self.coordinator.data
+        status = None
+
+        if data:
+            status = data.get("Data", {}).get("open")
+
+        if status is True:
+            return "mdi:boom-gate-outline"
+        if status is False:
+            return "mdi:boom-gate-up-outline"
+        return "mdi:boom-gate"
+
+    @property
     def extra_state_attributes(self):
         """Extra informatie uit het JSON Data-blok."""
         data = self.coordinator.data
