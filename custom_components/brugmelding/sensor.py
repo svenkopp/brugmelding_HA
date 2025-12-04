@@ -30,7 +30,7 @@ class BrugCoordinator(DataUpdateCoordinator):
         super().__init__(
             hass,
             name=f"brugmelding_{brug_id}",
-            update_interval=timedelta(seconds=SCAN_INTERVAL),
+            update_interval=SCAN_INTERVAL,
         )
         self.brug_id = brug_id
 
