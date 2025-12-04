@@ -44,7 +44,7 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
             name=f"Brugmelding {naam}",
             manufacturer="SvenKopp.nl",
             model="Brug Status Sensor",
-            configuration_url="https://brugmelding.svenkopp.com",
+            configuration_url="https://github.com/svenkopp/brugmelding_HA",
         )
 
     @property
