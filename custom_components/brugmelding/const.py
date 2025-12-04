@@ -1,3 +1,5 @@
 DOMAIN = "brugmelding"
 URL = "http://brugmelding.svenkopp.com/get/bruggen_open.json"
-SCAN_INTERVAL = 30
+
+from datetime import timedelta
+SCAN_INTERVAL = timedelta(seconds=30)
