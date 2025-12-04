@@ -3,5 +3,7 @@
   "domains": ["brugmelding"],
   "content_in_root": false,
   "country": "NL",
-  "homeassistant": "2023.0.0"
+  "homeassistant": "2023.0.0",
+  "icon": "custom_components/brugmelding/icon.png",
+  "logo": "custom_components/brugmelding/logo.png"
 }
