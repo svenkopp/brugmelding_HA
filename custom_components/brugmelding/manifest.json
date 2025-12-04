@@ -1,8 +1,8 @@
-{
+ko{
   "domain": "brugmelding",
   "name": "Brugmelding HA",
-  "version": "0.0.1",
-  "documentation": "https://github.com/jouwaccount/brugmelding_HA",
+  "version": "0.0.1.1",
+  "documentation": "https://github.com/svenkopp/brugmelding_HA",
   "requirements": [],
   "dependencies": [],
   "codeowners": ["@svenkopp"],
