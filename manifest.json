@@ -1,0 +1,9 @@
+{
+  "domain": "brugmelding",
+  "name": "Brugmelding HA",
+  "version": "1.0.0",
+  "documentation": "https://github.com/svenkopp/brugmelding_HA/",
+  "requirements": [],
+  "codeowners": ["@svenkopp"],
+  "iot_class": "cloud_polling"
+}
