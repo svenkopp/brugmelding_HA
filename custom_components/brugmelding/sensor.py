@@ -75,7 +75,7 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, brug_id)},
             name=f"Brugmelding {naam}",
-            manufacturer="SvenKopp.nl",
+            manufacturer="SvenKopp",
             model="Brug Status Sensor",
             configuration_url="https://brugmelding.svenkopp.com",
         )
