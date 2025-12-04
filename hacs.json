@@ -1,0 +1,7 @@
+{
+  "name": "Brugmelding",
+  "domains": ["brugmelding"],
+  "content_in_root": false,
+  "country": "NL",
+  "homeassistant": "2023.0.0"
+}
