@@ -5,22 +5,28 @@ from .const import DOMAIN, URL
 
 
 class BrugmeldingConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Config flow for Brugmelding integratie."""
+
     VERSION = 1
 
     def __init__(self):
         self._brug_map = {}
 
     async def async_step_user(self, user_input=None):
+        """Start configuratiestap."""
+        # Wanneer gebruiker een brug selecteert
         if user_input is not None:
-            brug_naam = user_input["brug"]
-            brug_id = self._brug_map[brug_naam]
-
+            gekozen = user_input["brug"]
+            brug_id = self._brug_map[gekozen]
             return self.async_create_entry(
-                title=brug_naam,
-                data={"brug_id": brug_id, "brug_naam": brug_naam},
+                title=gekozen,
+                data={
+                    "brug_id": brug_id,
+                    "brug_naam": gekozen
+                },
             )
 
-        # Bruggen ophalen
+        # Bruggen ophalen vanaf jouw endpoint
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(URL) as resp:
@@ -28,33 +34,33 @@ class BrugmeldingConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         except Exception:
             return self.async_abort(reason="cannot_connect")
 
-        # Nieuwe datastructuur verwerken
-        valid_bruggen = []
+        # Datastructuur verwerken
+        valid = []
         for b in bruggen:
             if not isinstance(b, dict):
                 continue
 
             brug_id = b.get("Id")
             data = b.get("Data", {})
-            brug_naam = data.get("Naam")
+            naam = data.get("Naam")
 
-            if brug_id and brug_naam:
-                valid_bruggen.append((brug_naam, brug_id))
+            if brug_id and naam:
+                valid.append((naam, brug_id))
 
-        if not valid_bruggen:
+        if not valid:
             return self.async_abort(reason="no_bruggen_available")
 
-        # Optielijst maken: “Willem Alexanderbrug (134)”
+        # Alfabetisch sorteren op naam
+        valid.sort(key=lambda x: x[0].lower())
+
+        # Dropdown-lijst maken
         self._brug_map = {
-            f"{naam} ({bid})": bid
-            for naam, bid in valid_bruggen
+            f"{naam} ({brug_id})": brug_id
+            for naam, brug_id in valid
         }
 
         schema = vol.Schema({
             vol.Required("brug"): vol.In(list(self._brug_map.keys()))
         })
 
-        return self.async_show_form(
-            step_id="user",
-            data_schema=schema
-        )
+        return self.async_show_form(step_id="user", data_schema=schema)
