@@ -72,13 +72,13 @@ class BrugBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._brug_id = brug_id
         self._naam = naam
 
-        self._attr_name = f"Brugmelding {naam}"
+        self._attr_name = naam
         self._attr_unique_id = f"brugmelding_binary_sensor_{brug_id}"
 
         # Device info → zodat dit een apparaat wordt in HA
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, brug_id)},
-            name=f"Brugmelding {naam}",
+            name=naam,
             manufacturer="SvenKopp.nl",
             model="Brug Status Binary Sensor",
             configuration_url="https://brugmelding.svenkopp.com",
