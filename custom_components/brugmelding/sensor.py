@@ -2,28 +2,30 @@ import aiohttp
 from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     CoordinatorEntity,
 )
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DOMAIN, URL, SCAN_INTERVAL
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
+    """Setup van de sensor via UI-configuratie."""
     brug_id = entry.data["brug_id"]
     brug_naam = entry.data["brug_naam"]
 
     coordinator = BrugCoordinator(hass, brug_id)
     await coordinator.async_config_entry_first_refresh()
 
-    async_add_entities([
-        BrugSensor(coordinator, brug_naam, brug_id)
-    ])
+    sensor = BrugSensor(coordinator, brug_naam, brug_id)
+    async_add_entities([sensor], True)
 
 
 class BrugCoordinator(DataUpdateCoordinator):
+    """Coordinator die elke 30 sec de JSON ophaalt."""
+
     def __init__(self, hass, brug_id):
         super().__init__(
             hass,
@@ -33,24 +35,21 @@ class BrugCoordinator(DataUpdateCoordinator):
         self.brug_id = brug_id
 
     async def _async_update_data(self):
-        """Haalt status op uit JSON endpoint."""
+        """Verkrijg brug-informatie."""
         async with aiohttp.ClientSession() as session:
             async with session.get(URL) as resp:
                 data = await resp.json()
 
-        # Zoek opgegeven brug-ID
-        for brug in data:
-            if not isinstance(brug, dict):
-                continue
-
-            if brug.get("Id") == self.brug_id:
-                return brug   # Hele JSON object teruggeven
+        # Zoek juiste brug op basis van Id
+        for b in data:
+            if isinstance(b, dict) and b.get("Id") == self.brug_id:
+                return b
 
         return None
 
 
 class BrugSensor(CoordinatorEntity, SensorEntity):
-    """Sensor die open/dicht status van één brug weergeeft."""
+    """Sensor voor open/dicht status."""
 
     def __init__(self, coordinator, naam, brug_id):
         super().__init__(coordinator)
@@ -60,7 +59,7 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = f"Brugmelding {naam}"
         self._attr_unique_id = f"brugmelding_sensor_{brug_id}"
 
-        # Device info → zodat de sensor onder een apparaat valt
+        # Device info zodat sensor onder apparaat valt
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, brug_id)},
             name=f"Brugmelding {naam}",
@@ -70,20 +69,22 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        """Retourneert open/dicht status van de brug."""
-
+        """Retourneer open/dicht status (True/False)."""
         data = self.coordinator.data
         if not data:
             return None
 
-        # Nieuwe datastructuur:
-        # data["Data"]["open"]
-        brug_data = data.get("Data", {})
-        return brug_data.get("open")
+        d = data.get("Data", {})
+        return d.get("open")
+
+    @property
+    def entity_picture(self):
+        """Icoon voor de entiteit."""
+        return "/local/brugmelding/icon.png"
 
     @property
     def extra_state_attributes(self):
-        """Geef extra info zoals situatie en NDW data."""
+        """Extra attributen uit de JSON."""
         data = self.coordinator.data
         if not data:
             return {}
@@ -95,11 +96,8 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
             "situatie": d.get("SituationCurrent"),
             "voorspeld": d.get("SituationVoorspeld"),
             "ndw_version": d.get("ndwVersion"),
-            "start": d.get("GetDatumStart"),
-            "afbeelding": d.get("image"),
+            "datum_start": d.get("GetDatumStart"),
+            "image": d.get("image"),
+            "latitude": d.get("latitude"),
+            "longitude": d.get("longitude"),
         }
-
-    @property
-    def entity_picture(self):
-        """Gebruik jouw afbeelding als entiteit-icoon."""
-        return "/local/brugmelding/icon.png"
