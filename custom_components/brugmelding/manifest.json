@@ -1,0 +1,10 @@
+{
+  "domain": "brugmelding",
+  "name": "Brugmelding Spijkenisse",
+  "version": "1.0.0",
+  "documentation": "https://github.com/jouwaccount/brugmelding_HA",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@jouwaccount"],
+  "iot_class": "cloud_polling"
+}
