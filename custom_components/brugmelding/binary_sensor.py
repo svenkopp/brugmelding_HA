@@ -1,8 +1,10 @@
 import aiohttp
 import logging
-from datetime import timedelta
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     CoordinatorEntity,
@@ -15,14 +17,14 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Setup van de sensor via UI-configuratie."""
+    """Setup van de binary sensor via UI-configuratie."""
     brug_id = entry.data["brug_id"]
     brug_naam = entry.data["brug_naam"]
 
     coordinator = BrugCoordinator(hass, brug_id)
     await coordinator.async_config_entry_first_refresh()
 
-    sensor = BrugSensor(coordinator, brug_naam, brug_id)
+    sensor = BrugBinarySensor(coordinator, brug_naam, brug_id)
     async_add_entities([sensor], True)
 
 
@@ -60,8 +62,10 @@ class BrugCoordinator(DataUpdateCoordinator):
         return None
 
 
-class BrugSensor(CoordinatorEntity, SensorEntity):
-    """Sensor die open/dicht status van één brug weergeeft."""
+class BrugBinarySensor(CoordinatorEntity, BinarySensorEntity):
+    """Binary sensor die open/dicht status van één brug weergeeft."""
+
+    _attr_device_class = BinarySensorDeviceClass.OPENING
 
     def __init__(self, coordinator, naam, brug_id):
         super().__init__(coordinator)
@@ -69,19 +73,19 @@ class BrugSensor(CoordinatorEntity, SensorEntity):
         self._naam = naam
 
         self._attr_name = f"Brugmelding {naam}"
-        self._attr_unique_id = f"brugmelding_sensor_{brug_id}"
+        self._attr_unique_id = f"brugmelding_binary_sensor_{brug_id}"
 
-        # Device info → zodat dit een apparat wordt in HA
+        # Device info → zodat dit een apparaat wordt in HA
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, brug_id)},
             name=f"Brugmelding {naam}",
             manufacturer="SvenKopp.nl",
-            model="Brug Status Sensor",
+            model="Brug Status Binary Sensor",
             configuration_url="https://brugmelding.svenkopp.com",
         )
 
     @property
-    def native_value(self):
+    def is_on(self):
         """Retourneer open/dicht status (True/False)."""
         data = self.coordinator.data
         if not data:
