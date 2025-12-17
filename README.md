@@ -7,6 +7,6 @@ https://brugmelding.svenkopp.com/get/bruggen_open.json
 Je kunt tijdens het toevoegen van de integratie een brug selecteren.
 Elke brug verschijnt daarna als binary sensor met state `on` (open) of `off` (dicht).
 
-0.0.2.9
+0.0.3
 
 De bruggen data komt van Nationaal Dataportaal Wegverkeer (ndw.nu)
