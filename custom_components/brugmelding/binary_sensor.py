@@ -24,7 +24,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = BrugCoordinator(hass, brug_id)
     await coordinator.async_config_entry_first_refresh()
 
-    sensor = BrugBinarySensor(coordinator, brug_naam, brug_id)
+    sensor = BrugBinarySensor(coordinator, brug_naam, entry.entry_id, brug_id)
     async_add_entities([sensor], True)
 
 
@@ -67,17 +67,17 @@ class BrugBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     _attr_device_class = BinarySensorDeviceClass.OPENING
 
-    def __init__(self, coordinator, naam, brug_id):
+    def __init__(self, coordinator, naam, entry_id, brug_id):
         super().__init__(coordinator)
         self._brug_id = brug_id
         self._naam = naam
 
         self._attr_name = naam
-        self._attr_unique_id = f"brugmelding_binary_sensor_{brug_id}"
+        self._attr_unique_id = f"brugmelding_binary_sensor_{entry_id}"
 
         # Device info → zodat dit een apparaat wordt in HA
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, brug_id)},
+            identifiers={(DOMAIN, entry_id)},
             name=naam,
             manufacturer="SvenKopp.nl",
             model="Brug Status Binary Sensor",

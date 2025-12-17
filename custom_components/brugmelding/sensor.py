@@ -22,7 +22,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = BrugCoordinator(hass, brug_id)
     await coordinator.async_config_entry_first_refresh()
 
-    sensor = BrugSensor(coordinator, brug_naam, brug_id)
+    sensor = BrugSensor(coordinator, brug_naam, entry.entry_id, brug_id)
     async_add_entities([sensor], True)
 
 
@@ -63,17 +63,17 @@ class BrugCoordinator(DataUpdateCoordinator):
 class BrugSensor(CoordinatorEntity, SensorEntity):
     """Sensor die open/dicht status van één brug weergeeft."""
 
-    def __init__(self, coordinator, naam, brug_id):
+    def __init__(self, coordinator, naam, entry_id, brug_id):
         super().__init__(coordinator)
         self._brug_id = brug_id
         self._naam = naam
 
         self._attr_name = f"Brugmelding {naam}"
-        self._attr_unique_id = f"brugmelding_sensor_{brug_id}"
+        self._attr_unique_id = f"brugmelding_sensor_{entry_id}"
 
         # Device info → zodat dit een apparat wordt in HA
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, brug_id)},
+            identifiers={(DOMAIN, entry_id)},
             name=f"Brugmelding {naam}",
             manufacturer="SvenKopp",
             model="Brug Status Sensor",
