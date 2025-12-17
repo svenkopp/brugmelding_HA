@@ -55,7 +55,7 @@ class BrugmeldingConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         # Dropdown-lijst maken
         self._brug_map = {
-            f"{naam} ({brug_id})": brug_id
+            f"{naam}": brug_id
             for naam, brug_id in valid
         }
 
