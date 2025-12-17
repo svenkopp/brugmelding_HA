@@ -8,6 +8,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     CoordinatorEntity,
+    UpdateFailed,
 )
 from homeassistant.helpers.device_registry import DeviceInfo
 
@@ -39,6 +40,18 @@ class BrugCoordinator(DataUpdateCoordinator):
             update_interval=SCAN_INTERVAL,  # LET OP: SCAN_INTERVAL is nu timedelta
         )
         self.brug_id = brug_id
+        self._last_data = None
+
+    def _use_last_data(self, reason: str):
+        """Geef de laatst bekende data terug of markeer update als mislukt."""
+        if self._last_data is not None:
+            _LOGGER.debug(
+                "Geen nieuwe data voor brug %s (%s); gebruik laatst bekende status",
+                self.brug_id,
+                reason,
+            )
+            return self._last_data
+        raise UpdateFailed(reason)
 
     async def _async_update_data(self):
         """Haalt de meest recente brugstatus op."""
@@ -47,19 +60,28 @@ class BrugCoordinator(DataUpdateCoordinator):
         async with aiohttp.ClientSession() as session:
             async with session.get(URL) as resp:
                 try:
+                    resp.raise_for_status()
                     data = await resp.json()
                 except Exception as e:
                     _LOGGER.error("JSON decode fout: %s", e)
-                    return None
+                    return self._use_last_data(f"JSON fout: {e}")
 
         # Zoek juiste brug-ID in de lijst
         for b in data:
             if isinstance(b, dict) and b.get("Id") == self.brug_id:
+                bridge_data = b.get("Data") or {}
+                if bridge_data.get("open") is None:
+                    _LOGGER.warning(
+                        "Geen status beschikbaar voor brug %s in laatste update",
+                        self.brug_id,
+                    )
+                    return self._use_last_data("Status ontbreekt in feed")
+                self._last_data = b
                 _LOGGER.debug("Gevonden brug %s: %s", self.brug_id, b)
                 return b
 
         _LOGGER.warning("Brug ID %s niet gevonden in JSON", self.brug_id)
-        return None
+        return self._use_last_data("Brug ID niet gevonden")
 
 
 class BrugBinarySensor(CoordinatorEntity, BinarySensorEntity):
