@@ -101,7 +101,7 @@ class BrugBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name=naam,
-            manufacturer="SvenKopp.nl",
+            manufacturer="SvenKopp",
             model="Brug Status Binary Sensor",
             configuration_url="https://brugmelding.svenkopp.com",
         )
